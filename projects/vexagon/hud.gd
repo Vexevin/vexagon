@@ -7,6 +7,7 @@ var skill_points := 0
 var pending_skill := -1
 var auto_pause_enabled: bool = false
 var cooldown_label: Label
+var passive_timer := 0.0
 
 var skill_names := [
 	"Fire Rate", "Firepower", "Range", "Proj Speed",
@@ -139,8 +140,15 @@ func _on_confirm() -> void:
 	if auto_pause_enabled and not _can_afford_any():
 		get_tree().paused = false
 
-func _process(_delta: float) -> void:
-	pass
+func _process(delta: float) -> void:
+	var gm_lvl = skill_levels[10]
+	if gm_lvl >= 4:
+		passive_timer += delta
+		var interval = 1.0
+		var passive_gold = gm_lvl - 3
+		if passive_timer >= interval:
+			passive_timer = 0.0
+			add_gold(passive_gold)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:

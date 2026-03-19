@@ -76,7 +76,16 @@ func _physics_process(delta: float) -> void:
 		if not enemy is Area2D:
 			continue
 		var dir: Vector2 = (tower_pos - (enemy as Area2D).position).normalized()
-		enemy.position += dir * enemy.get_meta("speed") * delta
+		var slow = enemy.get_meta("slow") if enemy.has_meta("slow") else 0.0
+		var slow_timer = enemy.get_meta("slow_timer") if enemy.has_meta("slow_timer") else 0.0
+		if slow_timer > 0:
+			slow_timer -= delta
+			enemy.set_meta("slow_timer", slow_timer)
+		else:
+			slow = 0.0
+			enemy.set_meta("slow", 0.0)
+		var effective_speed = enemy.get_meta("speed") * (1.0 - slow)
+		enemy.position += dir * effective_speed * delta
 		enemy.rotation = dir.angle() + PI / 2.0
 		if enemy.position.distance_to(tower_pos) < 20.0:
 			var tower = get_parent().get_node("Tower")
@@ -90,14 +99,78 @@ func on_bullet_hit(enemy: Area2D, area: Area2D) -> void:
 	if not is_instance_valid(enemy):
 		return
 	area.queue_free()
-	var hp: int = enemy.get_meta("hp") - 1
+	var dmg = area.get_meta("damage") if area.has_meta("damage") else 1.0
+	var hp: float = enemy.get_meta("hp") - dmg
 	enemy.set_meta("hp", hp)
 	var poly: Polygon2D = enemy.get_meta("poly")
 	poly.color = Color(1.0, hp / 3.0, hp / 3.0)
-	if hp <= 0:
-		var hud = get_parent().get_node("Hud")
-		hud.add_kill()
-		enemies_alive -= 1
-		var gold_mult: float = 1.0 + (hud.skill_levels[10] * 0.25)
-		hud.add_gold(ceili(gold_mult))
-		enemy.queue_free()
+	if area.has_meta("knockback"):
+		var kb = area.get_meta("knockback")
+		var kb_dir = (enemy.position - tower_pos).normalized()
+		enemy.set_meta("slow", kb["slow"])
+		enemy.set_meta("slow_timer", kb["duration"])
+		if kb["push"] > 0:
+			enemy.position += kb_dir * kb["push"]
+		if hp <= 0:
+			var hud = get_parent().get_node("Hud")
+			hud.add_kill()
+			enemies_alive -= 1
+			var gm_lvl = hud.skill_levels[10]
+			var coins = 1
+			if gm_lvl <= 3:
+				coins = 1 + gm_lvl
+				var gold_mult: float = 1.0 + (gm_lvl * 0.25)
+				hud.add_gold(ceili(coins * gold_mult))
+			if gm_lvl >= 7:
+				var drop_chance = 0.05 + (gm_lvl - 7) * 0.05
+				if randf() < drop_chance:
+					hud.add_node_fragment(1)
+			if area.has_meta("split_level") and area.get_meta("split_level") > 0:
+				spawn_fragment(enemy.position, (enemy.position - tower_pos).normalized(), dmg, area.get_meta("split_level"))
+				enemy.queue_free()
+			if area.has_meta("explosive_radius"):
+				var chain = area.get_meta("explosive_lvl") == 10
+				trigger_explosion(enemy.position, area.get_meta("explosive_radius"), dmg / 2.0, chain)
+			
+func spawn_fragment(pos: Vector2, dir: Vector2, dmg: float, split_level: int) -> void:
+	if split_level <= 0:
+		return
+	var piercing = split_level >= 7
+	for i in 2:
+		var frag := Area2D.new()
+		frag.add_to_group("bullet")
+		frag.set_meta("damage", dmg / 2.0)
+		frag.set_meta("split_level", split_level - 1)
+		var spread_dir = dir.rotated(deg_to_rad(45.0 if i == 0 else -45.0))
+		var shape := CollisionShape2D.new()
+		var circle := CircleShape2D.new()
+		circle.radius = 4.0
+		shape.shape = circle
+		frag.add_child(shape)
+		var poly := Polygon2D.new()
+		poly.polygon = PackedVector2Array([Vector2(0, -4), Vector2(3, 4), Vector2(-3, 4)])
+		poly.color = Color.CYAN
+		frag.add_child(poly)
+		frag.position = pos
+		get_parent().add_child(frag)
+		var tween := get_tree().create_tween()
+		tween.tween_property(frag, "global_position", pos + spread_dir * 200.0, 0.4)
+		tween.tween_callback(frag.queue_free)
+		frag.area_entered.connect(func(area): on_bullet_hit(frag, area))
+
+func trigger_explosion(pos: Vector2, radius: float, dmg: float, chain: bool) -> void:
+	if radius <= 0:
+		return
+	for enemy in get_children():
+		if not enemy is Area2D:
+			continue
+		if enemy.position.distance_to(pos) <= radius:
+			var hp: float = enemy.get_meta("hp") - dmg
+			enemy.set_meta("hp", hp)
+			if hp <= 0:
+				var hud = get_parent().get_node("Hud")
+				hud.add_kill()
+				enemies_alive -= 1
+				if chain:
+					trigger_explosion(enemy.position, radius, dmg / 2.0, false)
+				enemy.queue_free()
