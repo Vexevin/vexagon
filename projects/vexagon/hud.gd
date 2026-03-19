@@ -5,6 +5,8 @@ var node_fragments := 0
 var kill_count := 0
 var skill_points := 0
 var pending_skill := -1
+var auto_pause_enabled: bool = false
+var cooldown_label: Label
 
 var skill_names := [
 	"Fire Rate", "Firepower", "Range", "Proj Speed",
@@ -30,6 +32,16 @@ func _ready() -> void:
 	kill_label.position = Vector2(20, 70)
 	sp_label.position = Vector2(20, 95)
 	skill_panel.position = Vector2(840, 10)
+	var ap_btn = Button.new()
+	ap_btn.text = "⏸ AUTO"
+	ap_btn.toggle_mode = true
+	ap_btn.button_pressed = false
+	ap_btn.toggled.connect(func(pressed): auto_pause_enabled = pressed)
+	skill_panel.add_child(ap_btn)
+	cooldown_label = Label.new()
+	cooldown_label.position = Vector2(10, 165)
+	cooldown_label.visible = false
+	add_child(cooldown_label)
 
 	for i in skill_names.size():
 		skill_levels.append(0)
@@ -51,8 +63,6 @@ func _ready() -> void:
 		btn.text = "+"
 		btn.process_mode = Node.PROCESS_MODE_ALWAYS
 		var idx := i
-		btn.text = "+"
-		btn.process_mode = Node.PROCESS_MODE_ALWAYS
 		btn.pressed.connect(func(): _on_skill_selected(idx))
 		row.add_child(name_lbl)
 		row.add_child(bars_lbl)
@@ -65,7 +75,7 @@ func _ready() -> void:
 	confirm_btn.text = "CONFIRM UPGRADE"
 	confirm_btn.pressed.connect(_on_confirm)
 	skill_panel.add_child(confirm_btn)
-
+	confirm_btn.process_mode = Node.PROCESS_MODE_ALWAYS
 	refresh_panel()
 
 func refresh_panel() -> void:
@@ -88,6 +98,7 @@ func refresh_panel() -> void:
 func add_gold(amount: int) -> void:
 	gold += amount
 	gold_label.text = "Gold: " + str(gold)
+	
 func add_node_fragment(amount: int) -> void:
 	node_fragments += amount
 	node_label.text = "Upgrades: " + str(node_fragments)
@@ -98,7 +109,9 @@ func add_kill() -> void:
 	if kill_count > 0 and kill_count % 5 == 0:
 		skill_points += 1
 		call_deferred("refresh_panel")
-
+		if auto_pause_enabled:
+			_check_auto_pause()
+		
 func _on_skill_selected(index: int) -> void:
 	if skill_levels[index] >= 10:
 		return
@@ -123,6 +136,8 @@ func _on_confirm() -> void:
 		skill_kill_costs[pending_skill] = 8
 	pending_skill = -1
 	call_deferred("refresh_panel")
+	if auto_pause_enabled and not _can_afford_any():
+		get_tree().paused = false
 
 func _process(_delta: float) -> void:
 	pass
@@ -131,3 +146,23 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_ESCAPE or event.keycode == KEY_P:
 			get_tree().paused = !get_tree().paused
+			
+func _check_auto_pause() -> void:
+	if _can_afford_any():
+		get_tree().paused = true
+		$SkillPanel.visible = true
+			
+func start_cooldown(duration: float) -> void:
+	get_tree().paused = false
+	cooldown_label.visible = true
+	cooldown_label.text = "Next Wave: " + str(int(duration)) + "s"
+
+func update_cooldown(time_left: float) -> void:
+	cooldown_label.text = "Next Wave: " + str(int(time_left)) + "s"
+	if time_left <= 0.0:
+		cooldown_label.visible = false
+func _can_afford_any() -> bool:
+	for i in range(skill_kill_costs.size()):
+		if skill_levels[i] < 10 and skill_points >= skill_kill_costs[i]:
+			return true
+	return false
