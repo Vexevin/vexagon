@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://ymtwmyw2eiiq"]
+
+[sub_resource type="TileSet" id="TileSet_hwg31"]
+tile_shape = 3
+tile_size = Vector2i(64, 74)
+
+[node name="HexMap" type="TileMapLayer"]
+tile_set = SubResource("TileSet_hwg31")

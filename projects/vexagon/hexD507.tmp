@@ -1,0 +1,45 @@
+[gd_scene load_steps=8 format=3 uid="uid://ccirokufarqll"]
+
+[ext_resource type="Script" path="res://hex_map.gd" id="1_6kkqr"]
+[ext_resource type="Script" path="res://player.gd" id="2_egfdp"]
+[ext_resource type="Script" path="res://tower.gd" id="3_jfgac"]
+[ext_resource type="Script" path="res://enemy_spawner.gd" id="4_r013d"]
+[ext_resource type="Script" path="res://hud.gd" id="5_xsr6p"]
+[ext_resource type="Script" path="res://crystal_spawner.gd" id="6_lsl7d"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_vqocj"]
+
+[node name="HexMap" type="Node2D"]
+script = ExtResource("1_6kkqr")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+script = ExtResource("2_egfdp")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource("CircleShape2D_vqocj")
+
+[node name="Polygon2D" type="Polygon2D" parent="Player"]
+
+[node name="Tower" type="Node2D" parent="."]
+script = ExtResource("3_jfgac")
+
+[node name="EnemySpawner" type="Node2D" parent="."]
+script = ExtResource("4_r013d")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+script = ExtResource("5_xsr6p")
+
+[node name="GoldLabel" type="Label" parent="Hud"]
+custom_minimum_size = Vector2(20, 20)
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Gold: 0"
+
+[node name="UpgradeLabel" type="Label" parent="Hud"]
+custom_minimum_size = Vector2(40, 40)
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Upgrades: 0"
+
+[node name="CrystalSpawner" type="Node2D" parent="."]
+script = ExtResource("6_lsl7d")
