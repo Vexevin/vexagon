@@ -11,7 +11,7 @@ var state := "IDLE"
 var cooldown_timer := 0.0
 var cooldown_duration := 10.0
 var spawn_delay := 0.0
-var spawn_delay_interval := 1.5
+var spawn_delay_interval := 2.5
 
 func _ready() -> void:
 	start_wave()
@@ -44,11 +44,12 @@ func start_wave() -> void:
 	enemies_spawned = 0
 	enemies_alive = 0
 	state = "SPAWNING"
+	spawn_delay_interval = max(0.8, 2.5 - (wave_number - 1) * 0.2)
 	spawn_delay = spawn_delay_interval
 
 func spawn_enemy() -> void:
 	var enemy := Area2D.new()
-	enemy.set_meta("hp", 3)
+	enemy.set_meta("hp", 3.0)
 	enemy.set_meta("speed", ENEMY_SPEED)
 
 	var shape := CollisionShape2D.new()
@@ -92,11 +93,30 @@ func _physics_process(delta: float) -> void:
 			tower.take_damage(10)
 			enemies_alive -= 1
 			enemy.queue_free()
+	for child in get_parent().get_children():
+		if not child is Area2D:
+			continue
+		if not child.is_in_group("bullet"):
+			continue
+		if not is_instance_valid(child):
+			continue
+		for enemy in get_children():
+			if not enemy is Area2D:
+				continue
+			if not is_instance_valid(enemy):
+				continue
+			if child.global_position.distance_to(enemy.global_position) < 15.0:
+				if not child.has_meta("hit"):
+					child.set_meta("hit", true)
+					on_bullet_hit(enemy, child)
+					break
 
 func on_bullet_hit(enemy: Area2D, area: Area2D) -> void:
 	if not area.is_in_group("bullet"):
 		return
 	if not is_instance_valid(enemy):
+		return
+	if not enemy.has_meta("hp"):
 		return
 	area.queue_free()
 	var dmg = area.get_meta("damage") if area.has_meta("damage") else 1.0
@@ -111,27 +131,27 @@ func on_bullet_hit(enemy: Area2D, area: Area2D) -> void:
 		enemy.set_meta("slow_timer", kb["duration"])
 		if kb["push"] > 0:
 			enemy.position += kb_dir * kb["push"]
-		if hp <= 0:
-			var hud = get_parent().get_node("Hud")
-			hud.add_kill()
-			enemies_alive -= 1
-			var gm_lvl = hud.skill_levels[10]
-			var coins = 1
-			if gm_lvl <= 3:
-				coins = 1 + gm_lvl
-				var gold_mult: float = 1.0 + (gm_lvl * 0.25)
-				hud.add_gold(ceili(coins * gold_mult))
-			if gm_lvl >= 7:
-				var drop_chance = 0.05 + (gm_lvl - 7) * 0.05
-				if randf() < drop_chance:
-					hud.add_node_fragment(1)
-			if area.has_meta("split_level") and area.get_meta("split_level") > 0:
-				spawn_fragment(enemy.position, (enemy.position - tower_pos).normalized(), dmg, area.get_meta("split_level"))
-				enemy.queue_free()
-			if area.has_meta("explosive_radius"):
-				var chain = area.get_meta("explosive_lvl") == 10
-				trigger_explosion(enemy.position, area.get_meta("explosive_radius"), dmg / 2.0, chain)
-			
+	if hp <= 0:
+		var hud = get_parent().get_node("Hud")
+		hud.add_kill()
+		enemies_alive -= 1
+		var gm_lvl = hud.skill_levels[10]
+		var coins = 1
+		if gm_lvl <= 3:
+			coins = 1 + gm_lvl
+		var gold_mult: float = 1.0 + (gm_lvl * 0.25)
+		hud.add_gold(ceili(coins * gold_mult))
+		if gm_lvl >= 7:
+			var drop_chance = 0.05 + (gm_lvl - 7) * 0.05
+			if randf() < drop_chance:
+				hud.add_node_fragment(1)
+		if area.has_meta("split_level") and area.get_meta("split_level") > 0:
+			spawn_fragment(enemy.position, (enemy.position - tower_pos).normalized(), dmg, area.get_meta("split_level"))
+		if area.has_meta("explosive_radius"):
+			var chain = area.get_meta("explosive_lvl") == 10
+			trigger_explosion(enemy.position, area.get_meta("explosive_radius"), dmg / 2.0, chain)
+		enemy.queue_free()
+		
 func spawn_fragment(pos: Vector2, dir: Vector2, dmg: float, split_level: int) -> void:
 	if split_level <= 0:
 		return
