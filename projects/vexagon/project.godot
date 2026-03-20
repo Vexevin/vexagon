@@ -14,3 +14,20 @@ config/name="VEXAGON"
 run/main_scene="res://hex_map_003.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=5120
+window/size/viewport_height=2160
+window/size/resizable=false
+window/stretch/mode="viewport"
+
+[editor]
+
+movie_writer/fps=144
+
+[rendering]
+
+environment/defaults/default_clear_color=Color(0.249099, 0.380253, 0.777747, 1)
+viewport/hdr_2d=true
+2d/snap/snap_2d_transforms_to_pixel=true

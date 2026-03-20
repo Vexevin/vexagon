@@ -5,7 +5,7 @@ var health := MAX_HEALTH
 var level := 1
 
 func _ready() -> void:
-	position = Vector2(576, 324)
+	position = Vector2(3330.0, 2100.0)
 	queue_redraw()
 
 func _draw() -> void:
