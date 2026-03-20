@@ -15,6 +15,8 @@ var wave_label: Label
 var boss_label: Label
 var bt_label: Label
 var game_over_panel: Panel
+var placement_panel: Panel
+var selected_node_type := ""
 
 
 var skill_names := [
@@ -256,10 +258,7 @@ func _input(event: InputEvent) -> void:
 		player.current_hp = 99999.0
 		player.max_hp = 99999.0
 		update_health(99999, 99999)
-	if event.keycode == KEY_F:
-		skill_points += 50
-		call_deferred("refresh_panel")
-			
+				
 func _check_auto_pause() -> void:
 	if _can_afford_any():
 		get_tree().paused = true
@@ -270,6 +269,7 @@ func start_cooldown(duration: float) -> void:
 	pause_label.visible = false
 	cooldown_label.visible = true
 	cooldown_label.text = "Next Wave: " + str(int(duration)) + "s"
+	show_placement_panel()
 
 func update_cooldown(time_left: float) -> void:
 	cooldown_label.text = "Next Wave: " + str(int(time_left)) + "s"
@@ -318,3 +318,35 @@ func show_game_over() -> void:
 	game_over_panel.add_child(msg)
 	game_over_panel.add_child(hint)
 	add_child(game_over_panel)
+	
+func show_placement_panel() -> void:
+	if placement_panel != null and is_instance_valid(placement_panel):
+		placement_panel.queue_free()
+	var nm = get_parent().get_node("NodeManager")
+	var cost = nm.get_placement_cost()
+	placement_panel = Panel.new()
+	placement_panel.position = Vector2(250, 580)
+	placement_panel.size = Vector2(400, 80)
+	placement_panel.process_mode = Node.PROCESS_MODE_ALWAYS
+	var turret_btn = Button.new()
+	turret_btn.text = "⚔️ Turret (" + str(cost) + "g)"
+	turret_btn.position = Vector2(10, 10)
+	turret_btn.size = Vector2(110, 60)
+	turret_btn.process_mode = Node.PROCESS_MODE_ALWAYS
+	turret_btn.pressed.connect(func(): selected_node_type = "turret")
+	var shield_btn = Button.new()
+	shield_btn.text = "🛡 Shield (" + str(cost) + "g)"
+	shield_btn.position = Vector2(140, 10)
+	shield_btn.size = Vector2(110, 60)
+	shield_btn.process_mode = Node.PROCESS_MODE_ALWAYS
+	shield_btn.pressed.connect(func(): selected_node_type = "shield")
+	var mine_btn = Button.new()
+	mine_btn.text = "💎 Mine (" + str(cost) + "g)"
+	mine_btn.position = Vector2(270, 10)
+	mine_btn.size = Vector2(110, 60)
+	mine_btn.process_mode = Node.PROCESS_MODE_ALWAYS
+	mine_btn.pressed.connect(func(): selected_node_type = "mine")
+	placement_panel.add_child(turret_btn)
+	placement_panel.add_child(shield_btn)
+	placement_panel.add_child(mine_btn)
+	add_child(placement_panel)

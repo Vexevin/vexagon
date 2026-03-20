@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://kk00b6swvwyg"]
+[gd_scene load_steps=9 format=3 uid="uid://kk00b6swvwyg"]
 
 [ext_resource type="Script" path="res://hex_map.gd" id="1_5lyf4"]
 [ext_resource type="Script" path="res://player.gd" id="2_ympxp"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://enemy_spawner.gd" id="4_pvcka"]
 [ext_resource type="Script" path="res://hud.gd" id="5_dmidj"]
 [ext_resource type="Script" path="res://crystal_spawner.gd" id="6_ojdh1"]
+[ext_resource type="Script" path="res://node_manager.gd" id="7_np5yi"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_vqocj"]
 
@@ -58,3 +59,6 @@ size_flags_horizontal = 3
 
 [node name="CrystalSpawner" type="Node2D" parent="."]
 script = ExtResource("6_ojdh1")
+
+[node name="NodeManager" type="Node2D" parent="."]
+script = ExtResource("7_np5yi")
