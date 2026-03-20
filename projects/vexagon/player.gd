@@ -255,6 +255,8 @@ func get_regen() -> float:
 		return 1.0
 	return 0.0
 func take_damage(amount: float) -> void:
+	if max_hp >= 99999.0:  # ← god mode check
+		return
 	current_hp -= amount
 	get_parent().get_node("Hud").update_health(current_hp, max_hp)
 	if current_hp <= 0:

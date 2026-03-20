@@ -94,11 +94,12 @@ func _physics_process(delta: float) -> void:
 				player.take_damage(1.0)
 				enemies_alive -= 1
 				enemy.queue_free()
-				if enemy.position.distance_to(tower_pos) < 20.0:
-					var tower = get_parent().get_node("Tower")
-					tower.take_damage(10)
-					enemies_alive -= 1
-					enemy.queue_free()
+				continue  # ← skip tower check, enemy is gone
+		if is_instance_valid(enemy) and enemy.position.distance_to(tower_pos) < 20.0:  # ← separate check
+			var tower = get_parent().get_node("Tower")
+			tower.take_damage(10)
+			enemies_alive -= 1
+			enemy.queue_free()
 	for child in get_parent().get_children():
 		if not child is Area2D:
 			continue
