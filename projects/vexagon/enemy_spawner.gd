@@ -88,11 +88,17 @@ func _physics_process(delta: float) -> void:
 		var effective_speed = enemy.get_meta("speed") * (1.0 - slow)
 		enemy.position += dir * effective_speed * delta
 		enemy.rotation = dir.angle() + PI / 2.0
-		if enemy.position.distance_to(tower_pos) < 20.0:
-			var tower = get_parent().get_node("Tower")
-			tower.take_damage(10)
-			enemies_alive -= 1
-			enemy.queue_free()
+		var player = get_parent().get_node("Player")
+		if is_instance_valid(player):
+			if enemy.position.distance_to(player.global_position) < 20.0:
+				player.take_damage(1.0)
+				enemies_alive -= 1
+				enemy.queue_free()
+				if enemy.position.distance_to(tower_pos) < 20.0:
+					var tower = get_parent().get_node("Tower")
+					tower.take_damage(10)
+					enemies_alive -= 1
+					enemy.queue_free()
 	for child in get_parent().get_children():
 		if not child is Area2D:
 			continue
@@ -155,7 +161,7 @@ func on_bullet_hit(enemy: Area2D, area: Area2D) -> void:
 func spawn_fragment(pos: Vector2, dir: Vector2, dmg: float, split_level: int) -> void:
 	if split_level <= 0:
 		return
-	var piercing = split_level >= 7
+	var _piercing = split_level >= 7
 	for i in 2:
 		var frag := Area2D.new()
 		frag.add_to_group("bullet")

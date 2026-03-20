@@ -144,20 +144,24 @@ func _physics_process(delta: float) -> void:
 		if fire_timer <= 0.0:
 			fire_timer = get_fire_rate()
 			shoot()
-			var sim_lvl = get_parent().get_node("Hud").skill_levels[9]
-	if bullet_time_recharge > 0:
-		bullet_time_recharge -= delta
-	if Input.is_key_pressed(KEY_SPACE) and not bullet_time_active and bullet_time_recharge <= 0:
-		bullet_time_active = true
-		bullet_time_timer = 10.0
-		Engine.time_scale = 0.1
-	if bullet_time_active:
-		bullet_time_timer -= delta * 10.0
-		if bullet_time_timer <= 0:
-			bullet_time_active = false
-			bullet_time_recharge = 15.0
-			Engine.time_scale = 1.0
-			apply_regen(delta)
+	var sim_lvl = get_parent().get_node("Hud").skill_levels[9]
+	if sim_lvl == 10:
+		if bullet_time_recharge > 0:
+			bullet_time_recharge -= delta
+		if Input.is_key_pressed(KEY_SPACE) and not bullet_time_active and bullet_time_recharge <= 0:
+			bullet_time_active = true
+			bullet_time_timer = 10.0
+			Engine.time_scale = 0.1
+		if bullet_time_active:
+			bullet_time_timer -= delta * 10.0
+			if bullet_time_timer <= 0:
+				bullet_time_active = false
+				bullet_time_recharge = 15.0
+				Engine.time_scale = 1.0
+				get_parent().get_node("Hud").update_wave_info(
+	get_parent().get_node("EnemySpawner").wave_number,
+	bullet_time_active, bullet_time_timer, bullet_time_recharge)
+	apply_regen(delta)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -166,68 +170,69 @@ func _input(event: InputEvent) -> void:
 
 func shoot() -> void:
 	var shot_data = get_extra_shots()
-	var _shot_count = shot_data["count"]
+	var shot_count = shot_data["count"]
 	var bullet_color = shot_data["color"]
-	var bullet := Area2D.new()
-	bullet.add_to_group("bullet")
-	
-	var shape := CollisionShape2D.new()
-	var circle := CircleShape2D.new()
-	circle.radius = 5.0
-	shape.shape = circle
-	bullet.add_child(shape)
-	
-	var poly := Polygon2D.new()
-	poly.polygon = PackedVector2Array([
-		Vector2(0, -6), Vector2(3, 6), Vector2(-3, 6)
+	for _i in range(shot_count):
+		var bullet := Area2D.new()
+		bullet.add_to_group("bullet")
+		
+		var shape := CollisionShape2D.new()
+		var circle := CircleShape2D.new()
+		circle.radius = 5.0
+		shape.shape = circle
+		bullet.add_child(shape)
+		
+		var poly := Polygon2D.new()
+		poly.polygon = PackedVector2Array([
+			Vector2(0, -6), Vector2(3, 6), Vector2(-3, 6)
+		])
+		poly.color = bullet_color
+		var sz = 1.0 + get_parent().get_node("Hud").skill_levels[1] / 3 * 0.5
+		poly.polygon = PackedVector2Array([
+		Vector2(0, -6 * sz), Vector2(3 * sz, 6 * sz), Vector2(-3 * sz, 6 * sz)
 	])
-	poly.color = bullet_color
-	var sz = 1.0 + get_parent().get_node("Hud").skill_levels[1] / 3 * 0.5
-	poly.polygon = PackedVector2Array([
-	Vector2(0, -6 * sz), Vector2(3 * sz, 6 * sz), Vector2(-3 * sz, 6 * sz)
-])
-	bullet.global_position = global_position
-	bullet.rotation = rotation
-	bullet.add_child(poly)
-	get_parent().add_child(bullet)
-	bullet.set_meta("damage", get_damage())
-	bullet.set_meta("explosive_radius", get_explosive_radius())
-	bullet.set_meta("explosive_lvl", get_parent().get_node("Hud").skill_levels[7])
-	bullet.set_meta("split_level", get_split_level())
-	bullet.set_meta("knockback", get_knockback())
-	bullet.set_meta("size_level", get_parent().get_node("Hud").skill_levels[1] / 3)
-	var dir := (get_global_mouse_position() - global_position).normalized()
-	var bullet_range := get_range()
-	var travel_time := bullet_range / (get_proj_speed() * 60.0)
-	var tween := get_tree().create_tween()
-	tween.tween_property(bullet, "global_position", global_position + dir * bullet_range, travel_time)
-	var lvl2 = get_parent().get_node("Hud").skill_levels[2]
-	if lvl2 == 10:
-		get_tree().create_timer(10.0).timeout.connect(bullet.queue_free)
-	else:
-		tween.tween_callback(bullet.queue_free)
-	if get_parent().get_node("Hud").skill_levels[5] == 10:
-		var back_dir = -dir
-		var back_bullet := Area2D.new()
-		back_bullet.add_to_group("bullet")
-		back_bullet.set_meta("damage", get_damage())
-		back_bullet.set_meta("knockback", get_knockback())
-		var bs = CollisionShape2D.new()
-		var bc = CircleShape2D.new()
-		bc.radius = 5.0
-		bs.shape = bc
-		back_bullet.add_child(bs)
-		var bp := Polygon2D.new()
-		bp.color = Color.WHITE
-		bp.polygon = PackedVector2Array([Vector2(0, -6), Vector2(3, 6), Vector2(-3, 6)])
-		back_bullet.add_child(bp)
-		back_bullet.global_position = global_position
-		get_parent().add_child(back_bullet)
-		var br := get_range()
-		var bt := br / (get_proj_speed() * 60.0)
-		var btween := get_tree().create_tween()
-		btween.tween_property(back_bullet, "global_position", global_position + back_dir * br, bt)
-		btween.tween_callback(back_bullet.queue_free)
+		bullet.global_position = global_position
+		bullet.rotation = rotation
+		bullet.add_child(poly)
+		get_parent().add_child(bullet)
+		bullet.set_meta("damage", get_damage())
+		bullet.set_meta("explosive_radius", get_explosive_radius())
+		bullet.set_meta("explosive_lvl", get_parent().get_node("Hud").skill_levels[7])
+		bullet.set_meta("split_level", get_split_level())
+		bullet.set_meta("knockback", get_knockback())
+		bullet.set_meta("size_level", get_parent().get_node("Hud").skill_levels[1] / 3)
+		var dir := (get_global_mouse_position() - global_position).normalized()
+		var bullet_range := get_range()
+		var travel_time := bullet_range / (get_proj_speed() * 60.0)
+		var tween := get_tree().create_tween()
+		tween.tween_property(bullet, "global_position", global_position + dir * bullet_range, travel_time)
+		var lvl2 = get_parent().get_node("Hud").skill_levels[2]
+		if lvl2 == 10:
+			get_tree().create_timer(10.0).timeout.connect(bullet.queue_free)
+		else:
+			tween.tween_callback(bullet.queue_free)
+		if get_parent().get_node("Hud").skill_levels[5] == 10:
+			var back_dir = -dir
+			var back_bullet := Area2D.new()
+			back_bullet.add_to_group("bullet")
+			back_bullet.set_meta("damage", get_damage())
+			back_bullet.set_meta("knockback", get_knockback())
+			var bs = CollisionShape2D.new()
+			var bc = CircleShape2D.new()
+			bc.radius = 5.0
+			bs.shape = bc
+			back_bullet.add_child(bs)
+			var bp := Polygon2D.new()
+			bp.color = Color.WHITE
+			bp.polygon = PackedVector2Array([Vector2(0, -6), Vector2(3, 6), Vector2(-3, 6)])
+			back_bullet.add_child(bp)
+			back_bullet.global_position = global_position
+			get_parent().add_child(back_bullet)
+			var br := get_range()
+			var bt := br / (get_proj_speed() * 60.0)
+			var btween := get_tree().create_tween()
+			btween.tween_property(back_bullet, "global_position", global_position + back_dir * br, bt)
+			btween.tween_callback(back_bullet.queue_free)
 		
 func get_proj_speed() -> float:
 	
@@ -251,6 +256,7 @@ func get_regen() -> float:
 	return 0.0
 func take_damage(amount: float) -> void:
 	current_hp -= amount
+	get_parent().get_node("Hud").update_health(current_hp, max_hp)
 	if current_hp <= 0:
 		current_hp = 0
 		Engine.time_scale = 1.0
@@ -263,3 +269,4 @@ func apply_regen(delta: float) -> void:
 		if regen_timer >= 1.0:
 			regen_timer = 0.0
 			current_hp = min(current_hp + 1.0, get_max_hp())
+			get_parent().get_node("Hud").update_health(current_hp, max_hp)

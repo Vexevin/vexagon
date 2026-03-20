@@ -8,6 +8,11 @@ var pending_skill := -1
 var auto_pause_enabled: bool = false
 var cooldown_label: Label
 var passive_timer := 0.0
+var health_label: Label
+var pause_label: Label
+var wave_label: Label
+var boss_label: Label
+var bt_label: Label
 
 var skill_names := [
 	"Fire Rate", "Firepower", "Range", "Proj Speed",
@@ -28,10 +33,6 @@ var confirm_btn: Button
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	gold_label.position = Vector2(20, 20)
-	node_label.position = Vector2(20, 45)
-	kill_label.position = Vector2(20, 70)
-	sp_label.position = Vector2(20, 95)
 	skill_panel.position = Vector2(840, 10)
 	var ap_btn = Button.new()
 	ap_btn.text = "⏸ AUTO"
@@ -40,10 +41,37 @@ func _ready() -> void:
 	ap_btn.toggled.connect(func(pressed): auto_pause_enabled = pressed)
 	skill_panel.add_child(ap_btn)
 	cooldown_label = Label.new()
-	cooldown_label.position = Vector2(10, 165)
+	cooldown_label.position = Vector2(400, 10)
+	cooldown_label.add_theme_font_size_override("font_size", 24)
 	cooldown_label.visible = false
+	pause_label = Label.new()
+	pause_label.text = "⏸"
+	pause_label.visible = false
+	pause_label.add_theme_font_size_override("font_size", 120)
+	pause_label.modulate = Color.RED
+	pause_label.position = Vector2(440, 200)
+	add_child(pause_label)
 	add_child(cooldown_label)
-
+	health_label = Label.new()
+	health_label.position = Vector2(20, 120)
+	health_label.text = "HP: 10 / 10"
+	wave_label = Label.new()
+	wave_label.position = Vector2(20, 145)
+	wave_label.text = "Wave: 1"
+	add_child(wave_label)
+	wave_label.add_theme_font_size_override("font_size", 18)
+	boss_label = Label.new()
+	boss_label.position = Vector2(20, 165)
+	boss_label.text = "Boss in: 5 waves"
+	add_child(boss_label)
+	boss_label.add_theme_font_size_override("font_size", 18)
+	bt_label = Label.new()
+	bt_label.position = Vector2(20, 185)
+	bt_label.text = "BT: Ready"
+	add_child(bt_label)
+	bt_label.add_theme_font_size_override("font_size", 18)
+	add_child(health_label)
+	health_label.add_theme_font_size_override("font_size", 18)
 	for i in skill_names.size():
 		skill_levels.append(0)
 		skill_kill_costs.append(1)
@@ -85,9 +113,10 @@ func refresh_panel() -> void:
 		var row: HBoxContainer = skill_rows[i]
 		var bars: Label = row.get_child(1)
 		var cost: Label = row.get_child(2)
-		var filled := "█".repeat(skill_levels[i])
-		var empty := "░".repeat(5 - min(skill_levels[i], 5))
-		bars.text = filled + empty
+		var display_lvl: int = min(skill_levels[i], 5)
+		var filled := "█".repeat(display_lvl)
+		var empty := "░".repeat(5 - display_lvl)
+		bars.text = filled + empty + " LV:" + str(skill_levels[i])
 		cost.text = "(" + str(skill_kill_costs[i]) + "sp)"
 		if i == pending_skill:
 			row.modulate = Color.YELLOW
@@ -152,8 +181,9 @@ func _process(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_ESCAPE or event.keycode == KEY_P:
+		if event.keycode == KEY_TAB:
 			get_tree().paused = !get_tree().paused
+			pause_label.visible = get_tree().paused
 			
 func _check_auto_pause() -> void:
 	if _can_afford_any():
@@ -174,3 +204,17 @@ func _can_afford_any() -> bool:
 		if skill_levels[i] < 10 and skill_points >= skill_kill_costs[i]:
 			return true
 	return false
+	
+func update_health(current: float, max_val: float) -> void:
+	health_label.text = "HP: " + str(int(current)) + " / " + str(int(max_val))
+	
+func update_wave_info(wave: int, bt_active: bool, bt_timer: float, bt_recharge: float) -> void:
+	wave_label.text = "Wave: " + str(wave)
+	var waves_to_boss = 5 - ((wave - 1) % 5)
+	boss_label.text = "Boss in: " + str(waves_to_boss) + " waves"
+	if bt_active:
+		bt_label.text = "BT: " + str(snappedf(bt_timer / 10.0, 0.1)) + "s"
+	elif bt_recharge > 0:
+		bt_label.text = "BT: " + str(snappedf(bt_recharge, 0.1)) + "s recharge"
+	else:
+		bt_label.text = "BT: Ready"
