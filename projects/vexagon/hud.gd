@@ -14,6 +14,7 @@ var pause_label: Label
 var wave_label: Label
 var boss_label: Label
 var bt_label: Label
+var game_over_panel: Panel
 
 
 var skill_names := [
@@ -234,22 +235,30 @@ func _process(delta: float) -> void:
 			add_gold(passive_gold)
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_TAB:
-			get_tree().paused = !get_tree().paused
-			pause_label.visible = get_tree().paused
-		if event.keycode == KEY_I:
-			$SkillPanel.visible = !$SkillPanel.visible
-			get_tree().paused = $SkillPanel.visible
-			pause_label.visible = get_tree().paused
-		if event.keycode == KEY_G:
-			var player = get_parent().get_node("Player")
-			player.current_hp = 99999.0
-			player.max_hp = 99999.0
-			update_health(99999, 99999)
-		if event.keycode == KEY_F:
-			skill_points += 50
-			call_deferred("refresh_panel")
+	if not event is InputEventKey:
+		return
+	if not event.pressed:
+		return
+	if game_over_panel != null and is_instance_valid(game_over_panel):
+		Engine.time_scale = 1.0
+		get_tree().paused = false
+		get_tree().reload_current_scene()
+		return
+	if event.keycode == KEY_TAB:
+		get_tree().paused = !get_tree().paused
+		pause_label.visible = get_tree().paused
+	if event.keycode == KEY_I:
+		$SkillPanel.visible = !$SkillPanel.visible
+		get_tree().paused = $SkillPanel.visible
+		pause_label.visible = get_tree().paused
+	if event.keycode == KEY_G:
+		var player = get_parent().get_node("Player")
+		player.current_hp = 99999.0
+		player.max_hp = 99999.0
+		update_health(99999, 99999)
+	if event.keycode == KEY_F:
+		skill_points += 50
+		call_deferred("refresh_panel")
 			
 func _check_auto_pause() -> void:
 	if _can_afford_any():
@@ -285,3 +294,27 @@ func update_wave_info(wave: int, bt_active: bool, bt_timer: float, bt_recharge: 
 		bt_label.text = "BT: " + str(snappedf(bt_recharge, 0.1)) + "s recharge"
 	else:
 		bt_label.text = "BT: Ready"
+		
+func show_game_over() -> void:
+	get_tree().paused = true
+	game_over_panel = Panel.new()
+	game_over_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	game_over_panel.modulate = Color(0, 0, 0, 0.85)
+	game_over_panel.process_mode = Node.PROCESS_MODE_ALWAYS
+	var msg = Label.new()
+	msg.text = "Aww! Don't give up!\nRebuild your Tower and try again!"
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	msg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	msg.add_theme_font_size_override("font_size", 36)
+	msg.modulate = Color.RED
+	var hint = Label.new()
+	hint.text = "Press any key to restart"
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hint.add_theme_font_size_override("font_size", 20)
+	hint.modulate = Color.WHITE
+	hint.position.y = 60
+	game_over_panel.add_child(msg)
+	game_over_panel.add_child(hint)
+	add_child(game_over_panel)

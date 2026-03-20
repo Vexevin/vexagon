@@ -34,7 +34,7 @@ func take_damage(amount: int) -> void:
 	health = max(health, 0)
 	queue_redraw()
 	if health <= 0:
-		print("TOWER DESTROYED — Game Over")
+		get_parent().get_node("Hud").show_game_over()
 
 func level_up() -> void:
 	level += 1

@@ -108,6 +108,7 @@ func _ready() -> void:
 	])
 	polygon.color = Color.YELLOW
 	position = Vector2(476, 324)
+	Engine.time_scale = 1.0
 	
 	var pickup_area := Area2D.new()
 	pickup_area.add_to_group("player")
@@ -263,7 +264,7 @@ func take_damage(amount: float) -> void:
 		current_hp = 0
 		Engine.time_scale = 1.0
 		bullet_time_active = false
-		print("PLAYER DEAD")
+		get_parent().get_node("Hud").show_game_over()
 
 func apply_regen(delta: float) -> void:
 	if get_regen() > 0:
