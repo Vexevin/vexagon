@@ -91,9 +91,9 @@ func _ready() -> void:
 	pause_label = Label.new()
 	pause_label.text = "⏸"
 	pause_label.visible = false
-	pause_label.add_theme_font_size_override("font_size", 120)
+	pause_label.add_theme_font_size_override("font_size", 24)
 	pause_label.modulate = Color.RED
-	pause_label.position = Vector2(440, 200)
+	pause_label.position = Vector2(20, 210)
 	add_child(pause_label)
 	add_child(cooldown_label)
 	health_label = Label.new()
