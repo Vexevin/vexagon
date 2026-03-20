@@ -167,7 +167,15 @@ func spawn_fragment(pos: Vector2, dir: Vector2, dmg: float, split_level: int) ->
 		frag.add_to_group("bullet")
 		frag.set_meta("damage", dmg / 2.0)
 		frag.set_meta("split_level", split_level - 1)
-		var spread_dir = dir.rotated(deg_to_rad(45.0 if i == 0 else -45.0))
+		var is_shotgun = split_level >= 4
+		var spread_angle: float
+		if is_shotgun:
+			spread_angle = randf_range(15.0, 90.0)  # random wide cone
+			if i == 1:
+				spread_angle = -randf_range(15.0, 90.0)
+		else:
+			spread_angle = 20.0 if i == 0 else -20.0  # tight burst cone
+		var spread_dir = dir.rotated(deg_to_rad(spread_angle))
 		var shape := CollisionShape2D.new()
 		var circle := CircleShape2D.new()
 		circle.radius = 4.0

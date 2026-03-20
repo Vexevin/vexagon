@@ -33,12 +33,35 @@ var confirm_btn: Button
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	gold_label.position = Vector2(20, 20)
+	gold_label.add_theme_font_size_override("font_size", 18)
+	node_label.position = Vector2(20, 45)
+	node_label.add_theme_font_size_override("font_size", 18)
+	kill_label.position = Vector2(20, 70)
+	kill_label.add_theme_font_size_override("font_size", 18)
+	sp_label.position = Vector2(20, 95)
+	sp_label.add_theme_font_size_override("font_size", 18)
 	skill_panel.position = Vector2(840, 10)
 	var ap_btn = Button.new()
 	ap_btn.text = "⏸ AUTO"
 	ap_btn.toggle_mode = true
 	ap_btn.button_pressed = false
-	ap_btn.toggled.connect(func(pressed): auto_pause_enabled = pressed)
+	var ap_dot = Label.new()
+	ap_dot.text = " ● INACTIVE"
+	ap_dot.modulate = Color.RED
+	skill_panel.add_child(ap_dot)
+	ap_btn.modulate = Color.RED
+	ap_btn.toggled.connect(func(pressed):
+		auto_pause_enabled = pressed
+		if pressed:
+			ap_btn.modulate = Color.GREEN
+			ap_dot.text = " ● ACTIVE"
+			ap_dot.modulate = Color.GREEN
+		else:
+			ap_btn.modulate = Color.RED
+			ap_dot.text = " ● INACTIVE"
+			ap_dot.modulate = Color.RED
+)
 	skill_panel.add_child(ap_btn)
 	cooldown_label = Label.new()
 	cooldown_label.position = Vector2(400, 10)
@@ -192,6 +215,7 @@ func _check_auto_pause() -> void:
 			
 func start_cooldown(duration: float) -> void:
 	get_tree().paused = false
+	pause_label.visible = false
 	cooldown_label.visible = true
 	cooldown_label.text = "Next Wave: " + str(int(duration)) + "s"
 
