@@ -1,0 +1,65 @@
+[gd_scene load_steps=9 format=3 uid="uid://kk00b6swvwyg"]
+
+[ext_resource type="Script" path="res://hex_map.gd" id="1_7mg7h"]
+[ext_resource type="Script" path="res://player.gd" id="2_m3q6x"]
+[ext_resource type="Script" path="res://tower.gd" id="3_f01vu"]
+[ext_resource type="Script" path="res://enemy_spawner.gd" id="4_h340t"]
+[ext_resource type="Script" path="res://hud.gd" id="5_kkouf"]
+[ext_resource type="Script" path="res://node_manager.gd" id="6_cs66o"]
+[ext_resource type="Script" path="res://WorldSpawner.gd" id="7_ee4a2"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_vqocj"]
+
+[node name="HexMap" type="Node2D"]
+script = ExtResource("1_7mg7h")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+script = ExtResource("2_m3q6x")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource("CircleShape2D_vqocj")
+
+[node name="Polygon2D" type="Polygon2D" parent="Player"]
+
+[node name="Castle" type="Node2D" parent="."]
+position = Vector2(3330, 2100)
+script = ExtResource("3_f01vu")
+
+[node name="EnemySpawner" type="Node2D" parent="."]
+script = ExtResource("4_h340t")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+script = ExtResource("5_kkouf")
+
+[node name="GoldLabel" type="Label" parent="Hud"]
+custom_minimum_size = Vector2(20, 20)
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Gold: 0"
+
+[node name="UpgradeLabel" type="Label" parent="Hud"]
+custom_minimum_size = Vector2(20, 45)
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Upgrades: 0"
+
+[node name="KillLabel" type="Label" parent="Hud"]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Kills: 0"
+
+[node name="SPLabel" type="Label" parent="Hud"]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Skill Points: 0"
+
+[node name="SkillPanel" type="VBoxContainer" parent="Hud"]
+offset_right = 40.0
+offset_bottom = 40.0
+size_flags_horizontal = 3
+
+[node name="NodeManager" type="Node2D" parent="."]
+script = ExtResource("6_cs66o")
+
+[node name="WorldSpawner" type="Node2D" parent="."]
+script = ExtResource("7_ee4a2")
